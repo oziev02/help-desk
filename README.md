@@ -81,7 +81,7 @@ make vet
 make vuln
 ```
 
-CI runs unit tests with `-race`, integration tests against Postgres, `go vet`, `golangci-lint`, `govulncheck`, `gosec`, and CodeQL.
+CI runs unit tests with `-race`, integration tests against Postgres, `go vet`, `golangci-lint` (включая gosec), `govulncheck` и CodeQL.
 
 ## Environment
 
