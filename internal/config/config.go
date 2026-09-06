@@ -3,8 +3,11 @@ package config
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"time"
 )
+
+const defaultDevJWTSecret = "dev-secret-change-me"
 
 type Config struct {
 	HTTPAddr    string
@@ -12,23 +15,31 @@ type Config struct {
 	JWTSecret   string
 	JWTExpiry   time.Duration
 	SeedDemo    bool
+	SLAHours    int
+	AppEnv      string
 }
 
 func Load() (Config, error) {
+	slaHours, err := strconv.Atoi(getEnv("SLA_HOURS", "48"))
+	if err != nil || slaHours <= 0 {
+		return Config{}, fmt.Errorf("SLA_HOURS must be a positive integer")
+	}
+
 	cfg := Config{
 		HTTPAddr:    getEnv("HTTP_ADDR", ":8080"),
 		DatabaseURL: getEnv("DATABASE_URL", "postgres://helpdesk:helpdesk@localhost:5433/helpdesk?sslmode=disable"),
-		JWTSecret:   getEnv("JWT_SECRET", "dev-secret-change-me"),
+		JWTSecret:   getEnv("JWT_SECRET", defaultDevJWTSecret),
 		JWTExpiry:   24 * time.Hour,
-		SeedDemo:    getEnv("SEED_DEMO", "true") == "true",
-	}
-
-	if cfg.JWTSecret == "dev-secret-change-me" {
-		// acceptable for local dev only
+		SeedDemo:    getEnv("SEED_DEMO", "false") == "true",
+		SLAHours:    slaHours,
+		AppEnv:      getEnv("APP_ENV", "dev"),
 	}
 
 	if cfg.DatabaseURL == "" {
 		return Config{}, fmt.Errorf("DATABASE_URL is required")
+	}
+	if cfg.AppEnv != "dev" && (cfg.JWTSecret == "" || cfg.JWTSecret == defaultDevJWTSecret) {
+		return Config{}, fmt.Errorf("JWT_SECRET must be set to a non-default value when APP_ENV is not dev")
 	}
 
 	return cfg, nil
