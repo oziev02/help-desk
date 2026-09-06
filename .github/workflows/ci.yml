@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: helpdesk
+          POSTGRES_PASSWORD: helpdesk
+          POSTGRES_DB: helpdesk
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U helpdesk -d helpdesk"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run migrations
+        run: |
+          docker run --rm --network=host \
+            -v "${{ github.workspace }}:/src" \
+            -w /src migrate/migrate:v4.18.1 \
+            -path migrations \
+            -database "postgres://helpdesk:helpdesk@localhost:5432/helpdesk?sslmode=disable" up
+
+      - name: Unit tests
+        run: make test
+
+      - name: Race tests
+        run: make test-race
+
+      - name: Integration tests
+        env:
+          DATABASE_URL: postgres://helpdesk:helpdesk@localhost:5432/helpdesk?sslmode=disable
+          JWT_SECRET: ci-secret
+        run: make test-integration
+
+      - name: Vulnerability check
+        run: make vuln

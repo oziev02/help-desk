@@ -1,0 +1,13 @@
+.git
+.github
+.vscode
+**/*_test.go
+*.md
+*.docx
+bin/
+help-desk
+Makefile
+.golangci.yml
+docker-compose.yml
+.dockerignore
+Dockerfile
