@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"log/slog"
+	"slices"
 	"strings"
 	"time"
 
@@ -208,7 +209,7 @@ func (s *TicketService) Assign(ctx context.Context, actor domain.Actor, id strin
 	if err != nil {
 		return domain.Ticket{}, err
 	}
-	defer tx.Rollback(ctx)
+	defer func() { _ = tx.Rollback(ctx) }()
 
 	ticket, err := s.db.GetTicketByIDForUpdate(ctx, tx, id)
 	if err != nil {
@@ -255,7 +256,7 @@ func (s *TicketService) Transition(ctx context.Context, actor domain.Actor, id s
 	if err != nil {
 		return domain.Ticket{}, err
 	}
-	defer tx.Rollback(ctx)
+	defer func() { _ = tx.Rollback(ctx) }()
 
 	ticket, err := s.db.GetTicketByIDForUpdate(ctx, tx, id)
 	if err != nil {
@@ -286,7 +287,7 @@ func (s *TicketService) Complete(ctx context.Context, actor domain.Actor, id str
 	if err != nil {
 		return domain.Ticket{}, err
 	}
-	defer tx.Rollback(ctx)
+	defer func() { _ = tx.Rollback(ctx) }()
 
 	ticket, err := s.db.GetTicketByIDForUpdate(ctx, tx, id)
 	if err != nil {
@@ -340,7 +341,7 @@ func (s *TicketService) Refuse(ctx context.Context, actor domain.Actor, id strin
 	if err != nil {
 		return domain.Ticket{}, err
 	}
-	defer tx.Rollback(ctx)
+	defer func() { _ = tx.Rollback(ctx) }()
 
 	ticket, err := s.db.GetTicketByIDForUpdate(ctx, tx, id)
 	if err != nil {
@@ -387,7 +388,7 @@ func (s *TicketService) Reopen(ctx context.Context, actor domain.Actor, id strin
 	if err != nil {
 		return domain.Ticket{}, err
 	}
-	defer tx.Rollback(ctx)
+	defer func() { _ = tx.Rollback(ctx) }()
 
 	ticket, err := s.db.GetTicketByIDForUpdate(ctx, tx, id)
 	if err != nil {
@@ -497,10 +498,5 @@ func (s *TicketService) warnNotify(msg string, err error) {
 }
 
 func assigneeHasRole(u domain.User, role domain.Role) bool {
-	for _, r := range u.Roles {
-		if r == role {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(u.Roles, role)
 }

@@ -3,15 +3,15 @@ package domain
 import "errors"
 
 var (
-	ErrNotFound            = errors.New("not found")
-	ErrUnauthorized        = errors.New("unauthorized")
-	ErrForbidden           = errors.New("forbidden")
-	ErrInvalidInput        = errors.New("invalid input")
-	ErrInvalidTransition   = errors.New("invalid status transition")
-	ErrConflict            = errors.New("conflict")
-	ErrInvalidCredentials  = errors.New("invalid credentials")
-	ErrEmailTaken          = errors.New("email already taken")
-	ErrSelfLink            = errors.New("cannot link ticket to itself")
+	ErrNotFound           = errors.New("not found")
+	ErrUnauthorized       = errors.New("unauthorized")
+	ErrForbidden          = errors.New("forbidden")
+	ErrInvalidInput       = errors.New("invalid input")
+	ErrInvalidTransition  = errors.New("invalid status transition")
+	ErrConflict           = errors.New("conflict")
+	ErrInvalidCredentials = errors.New("invalid credentials")
+	ErrEmailTaken         = errors.New("email already taken")
+	ErrSelfLink           = errors.New("cannot link ticket to itself")
 )
 
 type AppError struct {

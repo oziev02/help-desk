@@ -104,7 +104,7 @@ func (s *AuthService) issueToken(user domain.User) (TokenPair, error) {
 func ParseToken(secret, tokenStr string) (domain.Actor, error) {
 	token, err := jwt.ParseWithClaims(tokenStr, &claims{}, func(t *jwt.Token) (any, error) {
 		if t.Method != jwt.SigningMethodHS256 {
-			return nil, fmt.Errorf("unexpected signing method")
+			return nil, errors.New("unexpected signing method")
 		}
 		return []byte(secret), nil
 	})

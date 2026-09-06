@@ -1,11 +1,146 @@
+version: "2"
+
 run:
+  concurrency: 4
   timeout: 5m
   tests: true
 
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 50
+
 linters:
   enable:
-    - errcheck
+    # correctness
     - govet
-    - ineffassign
     - staticcheck
     - unused
+    - errcheck
+    - errorlint
+    - nilerr
+    - forcetypeassert
+    - copyloopvar
+    - durationcheck
+    - reassign
+    # style
+    - gocritic
+    - revive
+    - misspell
+    - dupword
+    - predeclared
+    - errname
+    - asciicheck
+    # complexity (pragmatic thresholds below)
+    - gocyclo
+    - nestif
+    # performance
+    - perfsprint
+    - unconvert
+    - ineffassign
+    - goconst
+    # security & resources
+    - gosec
+    - bidichk
+    - bodyclose
+    - noctx
+    - containedctx
+    - fatcontext
+    - sqlclosecheck
+    - rowserrcheck
+    # logging
+    - sloglint
+    - loggercheck
+    # testing
+    - testifylint
+    - thelper
+    - usetesting
+    # modernization
+    - modernize
+    - exptostd
+    - intrange
+    - usestdlibvars
+    - nolintlint
+
+  disable:
+    - paralleltest # too noisy for existing suite
+    - funlen
+    - dupl
+    - wsl_v5
+    - whitespace
+    - godot
+    - lll
+    - prealloc
+    - wrapcheck
+    - err113
+    - mnd
+    - gocognit
+    - cyclop
+    - depguard
+    - gochecknoglobals
+    - gochecknoinits
+    - unparam
+    - testpackage
+    - exhaustruct
+    - varnamelen
+
+  exclusions:
+    paths:
+      - self-educate$
+      - vendor$
+      - third_party$
+
+  settings:
+    errcheck:
+      check-type-assertions: true
+    goconst:
+      min-len: 3
+      min-occurrences: 4
+    gocyclo:
+      min-complexity: 20
+    nestif:
+      min-complexity: 6
+    nolintlint:
+      require-explanation: true
+      require-specific: true
+    gosec:
+      excludes:
+        - G104 # unchecked error on defer Close in handlers — covered by bodyclose/errcheck where it matters
+    revive:
+      rules:
+        - name: blank-imports
+        - name: context-as-argument
+        - name: context-keys-type
+        - name: dot-imports
+        - name: error-return
+        - name: error-strings
+        - name: error-naming
+        - name: exported
+          disabled: true # bootcamp API surface; enable later
+        - name: if-return
+        - name: increment-decrement
+        - name: var-naming
+        - name: var-declaration
+        - name: package-comments
+          disabled: true
+        - name: range
+        - name: receiver-naming
+        - name: time-naming
+        - name: unexported-return
+        - name: indent-error-flow
+        - name: errorf
+        - name: empty-block
+        - name: superfluous-else
+        - name: unused-parameter
+        - name: unreachable-code
+        - name: redefines-builtin-id
+
+formatters:
+  enable:
+    - gofumpt
+    - goimports
+  settings:
+    gofumpt:
+      extra-rules: true
+  exclusions:
+    paths:
+      - self-educate$

@@ -1,7 +1,7 @@
 package config
 
 import (
-	"fmt"
+	"errors"
 	"os"
 	"strconv"
 	"time"
@@ -22,7 +22,7 @@ type Config struct {
 func Load() (Config, error) {
 	slaHours, err := strconv.Atoi(getEnv("SLA_HOURS", "48"))
 	if err != nil || slaHours <= 0 {
-		return Config{}, fmt.Errorf("SLA_HOURS must be a positive integer")
+		return Config{}, errors.New("SLA_HOURS must be a positive integer")
 	}
 
 	cfg := Config{
@@ -36,10 +36,10 @@ func Load() (Config, error) {
 	}
 
 	if cfg.DatabaseURL == "" {
-		return Config{}, fmt.Errorf("DATABASE_URL is required")
+		return Config{}, errors.New("DATABASE_URL is required")
 	}
 	if cfg.AppEnv != "dev" && (cfg.JWTSecret == "" || cfg.JWTSecret == defaultDevJWTSecret) {
-		return Config{}, fmt.Errorf("JWT_SECRET must be set to a non-default value when APP_ENV is not dev")
+		return Config{}, errors.New("JWT_SECRET must be set to a non-default value when APP_ENV is not dev")
 	}
 
 	return cfg, nil

@@ -44,7 +44,7 @@ func (p *Postgres) CreateUser(ctx context.Context, email, passwordHash, fullName
 	if err != nil {
 		return domain.User{}, err
 	}
-	defer tx.Rollback(ctx)
+	defer func() { _ = tx.Rollback(ctx) }()
 
 	var u domain.User
 	err = tx.QueryRow(ctx, `

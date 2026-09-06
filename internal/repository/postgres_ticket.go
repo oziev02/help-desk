@@ -51,7 +51,7 @@ func (p *Postgres) GetTicketByID(ctx context.Context, id string) (domain.Ticket,
 func (p *Postgres) GetTicketByIDForUpdate(ctx context.Context, tx Tx, id string) (domain.Ticket, error) {
 	ptx, ok := tx.(*pgxTx)
 	if !ok {
-		return domain.Ticket{}, fmt.Errorf("invalid transaction type")
+		return domain.Ticket{}, errors.New("invalid transaction type")
 	}
 	t, err := scanTicket(ptx.tx.QueryRow(ctx, `
 		SELECT `+ticketColumns+`
@@ -82,7 +82,7 @@ func (p *Postgres) UpdateTicket(ctx context.Context, ticket domain.Ticket) (doma
 func (p *Postgres) UpdateTicketInTx(ctx context.Context, tx Tx, ticket domain.Ticket) (domain.Ticket, error) {
 	ptx, ok := tx.(*pgxTx)
 	if !ok {
-		return domain.Ticket{}, fmt.Errorf("invalid transaction type")
+		return domain.Ticket{}, errors.New("invalid transaction type")
 	}
 	t, err := scanTicket(ptx.tx.QueryRow(ctx, `
 		UPDATE tickets SET title = $2, description = $3, category_id = $4, status = $5,
@@ -125,7 +125,6 @@ func (p *Postgres) buildListQuery(filter TicketFilter) (string, []any) {
 	if filter.VisibleToUserID != nil {
 		fmt.Fprintf(&sb, " AND (author_id = $%d OR assignee_id = $%d)", n, n)
 		args = append(args, *filter.VisibleToUserID)
-		n++
 	}
 	if filter.Overdue {
 		sb.WriteString(" AND due_at IS NOT NULL AND due_at < now() AND status NOT IN ('closed', 'cancelled')")
@@ -181,7 +180,7 @@ func (p *Postgres) AddComment(ctx context.Context, comment domain.Comment) (doma
 func (p *Postgres) AddCommentInTx(ctx context.Context, tx Tx, comment domain.Comment) (domain.Comment, error) {
 	ptx, ok := tx.(*pgxTx)
 	if !ok {
-		return domain.Comment{}, fmt.Errorf("invalid transaction type")
+		return domain.Comment{}, errors.New("invalid transaction type")
 	}
 	err := ptx.tx.QueryRow(ctx, `
 		INSERT INTO comments (ticket_id, author_id, body)

@@ -1,5 +1,7 @@
 package domain
 
+import "slices"
+
 var allowedTransitions = map[TicketStatus][]TicketStatus{
 	StatusNew:        {StatusAssigned, StatusCancelled},
 	StatusAssigned:   {StatusInProgress, StatusNew, StatusCancelled},
@@ -11,12 +13,7 @@ var allowedTransitions = map[TicketStatus][]TicketStatus{
 }
 
 func CanTransition(from, to TicketStatus) bool {
-	for _, next := range allowedTransitions[from] {
-		if next == to {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(allowedTransitions[from], to)
 }
 
 func isAssignee(actor Actor, ticket Ticket) bool {

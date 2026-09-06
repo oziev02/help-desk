@@ -2,11 +2,23 @@ name: CI
 
 on:
   push:
+    branches: [main]
   pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test:
+    name: Test
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
     services:
       postgres:
         image: postgres:16-alpine
@@ -22,8 +34,36 @@ jobs:
           --health-timeout 5s
           --health-retries 5
 
+    env:
+      DATABASE_URL: postgres://helpdesk:helpdesk@localhost:5432/helpdesk?sslmode=disable
+      JWT_SECRET: ci-secret
+      APP_ENV: dev
+      SEED_DEMO: "true"
+
     steps:
       - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Verify modules
+        run: |
+          go mod download
+          go mod verify
+
+      - name: Check go mod tidy
+        run: |
+          go mod tidy
+          git diff --exit-code go.mod go.sum
+
+      - name: Build
+        run: go build -buildvcs=false ./...
+
+      - name: Unit tests with race
+        run: go test ./... -count=1 -race -shuffle=on -coverprofile=coverage.out -covermode=atomic
 
       - name: Run migrations
         run: |
@@ -31,19 +71,98 @@ jobs:
             -v "${{ github.workspace }}:/src" \
             -w /src migrate/migrate:v4.18.1 \
             -path migrations \
-            -database "postgres://helpdesk:helpdesk@localhost:5432/helpdesk?sslmode=disable" up
-
-      - name: Unit tests
-        run: make test
-
-      - name: Race tests
-        run: make test-race
+            -database "$DATABASE_URL" up
 
       - name: Integration tests
-        env:
-          DATABASE_URL: postgres://helpdesk:helpdesk@localhost:5432/helpdesk?sslmode=disable
-          JWT_SECRET: ci-secret
-        run: make test-integration
+        run: go test ./... -count=1 -tags=integration -race -shuffle=on
 
-      - name: Vulnerability check
-        run: make vuln
+      - name: Upload coverage artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage.out
+          if-no-files-found: ignore
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: go vet
+        run: go vet ./...
+
+      - name: gofumpt / goimports check via golangci-lint
+        uses: golangci/golangci-lint-action@v7
+        with:
+          version: v2.6.0
+          args: --timeout=5m ./...
+
+  security:
+    name: Security
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: govulncheck
+        uses: golang/govulncheck-action@v1
+        with:
+          go-version-file: go.mod
+          go-package: ./...
+
+      - name: Run gosec
+        uses: securego/gosec@v2
+        with:
+          args: -no-fail -fmt sarif -out gosec-results.sarif ./...
+
+      - name: Upload gosec SARIF
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        continue-on-error: true
+        with:
+          sarif_file: gosec-results.sarif
+          category: gosec
+
+  codeql:
+    name: CodeQL
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: go
+          config-file: .github/codeql/codeql-config.yml
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
+
+      - name: Analyze
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:go"

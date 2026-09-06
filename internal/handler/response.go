@@ -84,7 +84,7 @@ func respondError(w http.ResponseWriter, logger *slog.Logger, msg string, err er
 }
 
 func decodeJSON(r *http.Request, dst any) error {
-	defer r.Body.Close()
+	defer func() { _ = r.Body.Close() }()
 	limited := io.LimitReader(r.Body, maxJSONBody+1)
 	body, err := io.ReadAll(limited)
 	if err != nil {

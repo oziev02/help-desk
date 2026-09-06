@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"slices"
 	"strings"
 
 	"github.com/oziev02/help-desk/internal/domain"
@@ -58,11 +59,9 @@ func RequireRole(roles ...domain.Role) func(http.Handler) http.Handler {
 				writeJSONError(w, http.StatusUnauthorized, "unauthorized", "unauthorized")
 				return
 			}
-			for _, role := range roles {
-				if actor.HasRole(role) {
-					next.ServeHTTP(w, r)
-					return
-				}
+			if slices.ContainsFunc(roles, actor.HasRole) {
+				next.ServeHTTP(w, r)
+				return
 			}
 			writeJSONError(w, http.StatusForbidden, "forbidden", "forbidden")
 		})

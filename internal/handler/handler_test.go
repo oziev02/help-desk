@@ -11,7 +11,7 @@ import (
 )
 
 func TestAuthMiddleware_missingHeader(t *testing.T) {
-	handler := middleware.Auth("secret", nil)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := middleware.Auth("secret", nil)(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
 
@@ -23,7 +23,7 @@ func TestAuthMiddleware_missingHeader(t *testing.T) {
 }
 
 func TestRequireRole_forbidden(t *testing.T) {
-	handler := middleware.RequireRole("admin")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := middleware.RequireRole("admin")(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
 

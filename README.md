@@ -76,7 +76,12 @@ Main endpoints:
 make test
 make test-race
 make test-integration   # requires running postgres + migrations
+make lint
+make vet
+make vuln
 ```
+
+CI runs unit tests with `-race`, integration tests against Postgres, `go vet`, `golangci-lint`, `govulncheck`, `gosec`, and CodeQL.
 
 ## Environment
 
