@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/oziev02/help-desk/internal/domain"
@@ -53,6 +54,10 @@ func (p *Postgres) CreateUser(ctx context.Context, email, passwordHash, fullName
 		email, passwordHash, fullName,
 	).Scan(&u.ID, &u.Email, &u.PasswordHash, &u.FullName, &u.CreatedAt)
 	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+			return domain.User{}, domain.ErrEmailTaken
+		}
 		return domain.User{}, err
 	}
 
@@ -163,6 +168,7 @@ func (p *Postgres) EnsureDemoUsers(ctx context.Context) error {
 		{"user@helpdesk.local", "user123", "Regular User", []domain.Role{domain.RoleUser}},
 		{"dispatcher@helpdesk.local", "dispatcher123", "Dispatcher User", []domain.Role{domain.RoleDispatcher}},
 		{"executor@helpdesk.local", "executor123", "Executor User", []domain.Role{domain.RoleExecutor}},
+		{"manager@helpdesk.local", "manager123", "Manager User", []domain.Role{domain.RoleManager}},
 	}
 
 	for _, d := range demos {

@@ -21,6 +21,15 @@ type CategoryStore interface {
 	CreateCategory(ctx context.Context, name string) (domain.Category, error)
 	ListCategories(ctx context.Context, activeOnly bool) ([]domain.Category, error)
 	GetCategoryByID(ctx context.Context, id string) (domain.Category, error)
+	SetCategoryActive(ctx context.Context, id string, active bool) (domain.Category, error)
+}
+
+type RoomStore interface {
+	CreateRoom(ctx context.Context, room domain.Room) (domain.Room, error)
+	ListRooms(ctx context.Context, activeOnly bool) ([]domain.Room, error)
+	GetRoomByID(ctx context.Context, id string) (domain.Room, error)
+	UpdateRoom(ctx context.Context, room domain.Room) (domain.Room, error)
+	SetRoomActive(ctx context.Context, id string, active bool) (domain.Room, error)
 }
 
 type TicketStore interface {
@@ -32,6 +41,7 @@ type TicketStore interface {
 	ListTickets(ctx context.Context, filter TicketFilter) ([]domain.Ticket, error)
 	SoftDeleteTicket(ctx context.Context, id string) error
 	AddComment(ctx context.Context, comment domain.Comment) (domain.Comment, error)
+	AddCommentInTx(ctx context.Context, tx Tx, comment domain.Comment) (domain.Comment, error)
 	ListComments(ctx context.Context, ticketID string) ([]domain.Comment, error)
 	LinkTickets(ctx context.Context, ticketID, linkedID string) error
 	UnlinkTickets(ctx context.Context, ticketID, linkedID string) error
@@ -40,9 +50,11 @@ type TicketStore interface {
 }
 
 type TicketFilter struct {
-	Status   *domain.TicketStatus
-	Assignee *string
-	Overdue  bool
+	Status          *domain.TicketStatus
+	Assignee        *string
+	Overdue         bool
+	AuthorID        *string
+	VisibleToUserID *string
 }
 
 type Tx interface {
@@ -53,6 +65,7 @@ type Tx interface {
 type DB interface {
 	UserStore
 	CategoryStore
+	RoomStore
 	TicketStore
 	Begin(ctx context.Context) (Tx, error)
 	Ping(ctx context.Context) error

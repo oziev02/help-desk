@@ -5,15 +5,16 @@ import "time"
 type Role string
 
 const (
-	RoleUser       Role = "user"
-	RoleDispatcher Role = "dispatcher"
-	RoleExecutor   Role = "executor"
-	RoleAdmin      Role = "admin"
+	RoleUser       Role = "user"       // заявитель
+	RoleDispatcher Role = "dispatcher" // диспетчер
+	RoleExecutor   Role = "executor"   // исполнитель
+	RoleManager    Role = "manager"    // руководитель
+	RoleAdmin      Role = "admin"      // администратор
 )
 
 func (r Role) Valid() bool {
 	switch r {
-	case RoleUser, RoleDispatcher, RoleExecutor, RoleAdmin:
+	case RoleUser, RoleDispatcher, RoleExecutor, RoleManager, RoleAdmin:
 		return true
 	default:
 		return false
@@ -32,6 +33,15 @@ type User struct {
 type Category struct {
 	ID        string
 	Name      string
+	IsActive  bool
+	CreatedAt time.Time
+}
+
+type Room struct {
+	ID        string
+	Name      string
+	Building  string
+	Floor     *int
 	IsActive  bool
 	CreatedAt time.Time
 }
@@ -58,17 +68,32 @@ func (s TicketStatus) Valid() bool {
 }
 
 type Ticket struct {
-	ID          string
-	Title       string
-	Description string
-	CategoryID  *string
-	Status      TicketStatus
-	AuthorID    string
-	AssigneeID  *string
-	Room        *string
-	DueAt       *time.Time
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
+	ID           string
+	Title        string
+	Description  string
+	CategoryID   *string
+	Status       TicketStatus
+	AuthorID     string
+	AssigneeID   *string
+	Room         *string
+	RoomID       *string
+	DueAt        *time.Time
+	Rating       *int
+	RefuseReason *string
+	ReopenCount  int
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
+}
+
+func (t Ticket) IsOverdue(now time.Time) bool {
+	if t.DueAt == nil {
+		return false
+	}
+	switch t.Status {
+	case StatusClosed, StatusCancelled:
+		return false
+	}
+	return t.DueAt.Before(now)
 }
 
 type Comment struct {
