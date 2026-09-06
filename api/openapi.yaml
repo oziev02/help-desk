@@ -1,0 +1,242 @@
+openapi: 3.0.3
+info:
+  title: Help Desk API
+  version: 1.0.0
+  description: |
+    Help desk backend API with JWT auth and RBAC.
+    Current contract is API v1 under /api/v1 (bootcamp frozen version).
+servers:
+  - url: http://localhost:8080/api/v1
+paths:
+  /auth/login:
+    post:
+      summary: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string }
+                password: { type: string }
+      responses:
+        "200":
+          description: OK
+  /auth/register:
+    post:
+      summary: Register user
+      responses:
+        "201":
+          description: Created
+  /tickets:
+    get:
+      summary: List tickets
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: query
+          name: status
+          schema: { type: string }
+        - in: query
+          name: assignee_id
+          schema: { type: string, format: uuid }
+        - in: query
+          name: overdue
+          schema: { type: boolean }
+      responses:
+        "200":
+          description: OK
+    post:
+      summary: Create ticket (auto due_at from SLA_HOURS if omitted)
+      security: [{ bearerAuth: [] }]
+      responses:
+        "201":
+          description: Created
+  /tickets/{id}:
+    get:
+      summary: Get ticket
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: OK
+    patch:
+      summary: Update ticket
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: OK
+    delete:
+      summary: Delete ticket
+      security: [{ bearerAuth: [] }]
+      responses:
+        "204":
+          description: No Content
+  /tickets/{id}/comments:
+    post:
+      summary: Add comment
+      security: [{ bearerAuth: [] }]
+      responses:
+        "201":
+          description: Created
+  /tickets/{id}/assign:
+    post:
+      summary: Assign executor
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: OK
+  /tickets/{id}/transitions:
+    post:
+      summary: Change ticket status
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: OK
+  /tickets/{id}/complete:
+    post:
+      summary: Confirm completion with rating and comment (applicant)
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: OK
+  /tickets/{id}/refuse:
+    post:
+      summary: Executor refuses assigned ticket with reason
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: OK
+  /tickets/{id}/reopen:
+    post:
+      summary: Reopen ticket (once)
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: OK
+  /tickets/{id}/cancel:
+    post:
+      summary: Cancel ticket
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: OK
+  /tickets/{id}/links:
+    post:
+      summary: Link tickets (dispatcher/admin)
+      security: [{ bearerAuth: [] }]
+      responses:
+        "204":
+          description: No Content
+  /tickets/{id}/links/{linkedId}:
+    delete:
+      summary: Unlink tickets (dispatcher/admin)
+      security: [{ bearerAuth: [] }]
+      responses:
+        "204":
+          description: No Content
+  /reports/tickets:
+    get:
+      summary: Ticket report (manager/dispatcher/admin)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: query
+          name: format
+          schema: { type: string, enum: [csv] }
+        - in: query
+          name: overdue
+          schema: { type: boolean }
+      responses:
+        "200":
+          description: OK
+  /rooms:
+    get:
+      summary: List active rooms
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: OK
+  /categories:
+    get:
+      summary: List active categories
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: OK
+  /admin/users/{id}/roles:
+    get:
+      summary: List user roles
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: OK
+    post:
+      summary: Grant role
+      security: [{ bearerAuth: [] }]
+      responses:
+        "204":
+          description: No Content
+  /admin/users/{id}/roles/{role}:
+    delete:
+      summary: Revoke role
+      security: [{ bearerAuth: [] }]
+      responses:
+        "204":
+          description: No Content
+  /admin/categories:
+    get:
+      summary: List categories
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: OK
+    post:
+      summary: Create category
+      security: [{ bearerAuth: [] }]
+      responses:
+        "201":
+          description: Created
+  /admin/categories/{id}:
+    patch:
+      summary: Deactivate category
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: OK
+  /admin/rooms:
+    get:
+      summary: List rooms
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: OK
+    post:
+      summary: Create room
+      security: [{ bearerAuth: [] }]
+      responses:
+        "201":
+          description: Created
+  /admin/rooms/{id}:
+    patch:
+      summary: Update room
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: OK
+    delete:
+      summary: Deactivate room
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: OK
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
