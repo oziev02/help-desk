@@ -1,29 +1,53 @@
 services:
   postgres:
     image: postgres:16-alpine
-    network_mode: host
     environment:
       POSTGRES_USER: helpdesk
       POSTGRES_PASSWORD: helpdesk
       POSTGRES_DB: helpdesk
-      PGPORT: "5433"
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U helpdesk -d helpdesk -p 5433"]
+      test: ["CMD-SHELL", "pg_isready -U helpdesk -d helpdesk"]
       interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
+
+  # Optional: make migrate / tools profile. Full stack runs migrations in API entrypoint.
+  migrate:
+    profiles: ["tools"]
+    image: migrate/migrate:v4.18.1
+    volumes:
+      - ./migrations:/migrations:ro
+    command:
+      - -path=/migrations
+      - -database=postgres://helpdesk:helpdesk@postgres:5432/helpdesk?sslmode=disable
+      - up
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
 
   api:
     build:
       context: .
       dockerfile: Dockerfile
-    network_mode: host
+      network: host
+    image: help-desk-api:local
+    ports:
+      - "8080:8080"
     environment:
       HTTP_ADDR: ":8080"
-      DATABASE_URL: postgres://helpdesk:helpdesk@127.0.0.1:5433/helpdesk?sslmode=disable
+      DATABASE_URL: postgres://helpdesk:helpdesk@postgres:5432/helpdesk?sslmode=disable
       APP_ENV: dev
       JWT_SECRET: dev-secret
       SEED_DEMO: "true"
     depends_on:
       postgres:
         condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  pgdata:

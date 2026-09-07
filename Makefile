@@ -25,29 +25,23 @@ DOCKER_LINT = docker run --rm \
 	-w /src \
 	golangci/golangci-lint:v2.6.0
 
-# host migrate binary (static) - works with PG on host network :5433
-DOCKER_MIGRATE = docker run --rm --network=host \
-	-v /usr/local/bin/migrate:/migrate:ro \
-	-v "$(CURDIR)/migrations:/migrations:ro" \
-	alpine:latest \
-	/migrate -path /migrations -database "$(DB_URL)"
-
-up-db:
-	docker compose up -d postgres
-
+# Full stack in Docker: Postgres + migrations + API image
 up:
-	docker compose up -d postgres
+	docker compose up --build -d
 
 down:
 	docker compose down
 
+up-db:
+	docker compose up -d postgres
+
 migrate: up-db
 	@echo "waiting for postgres..."
 	@for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do \
-		docker compose exec -T postgres pg_isready -U helpdesk -d helpdesk -p 5433 >/dev/null 2>&1 && break; \
+		docker compose exec -T postgres pg_isready -U helpdesk -d helpdesk >/dev/null 2>&1 && break; \
 		sleep 1; \
 	done
-	$(DOCKER_MIGRATE) up
+	docker compose --profile tools run --rm migrate
 
 test:
 	$(DOCKER_GO) sh -c 'go test $(GO_PACKAGES) -count=1'
@@ -58,6 +52,7 @@ test-race:
 build:
 	$(DOCKER_GO) go build -o /tmp/help-desk ./cmd/server
 
+# Dev hybrid: Postgres from compose, API via go run in a golang container
 run: up-db migrate
 	DATABASE_URL=$(DB_URL) JWT_SECRET=dev-secret SEED_DEMO=true APP_ENV=dev HTTP_ADDR=:8080 \
 	$(DOCKER_GO) sh -c 'go run ./cmd/server'
