@@ -1,6 +1,6 @@
 FROM migrate/migrate:v4.18.1 AS migrator
 
-FROM golang:1.25-alpine AS builder
+FROM golang:1.27-alpine AS builder
 
 WORKDIR /src
 
