@@ -16,7 +16,7 @@ RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
 	go build -trimpath -ldflags="-s -w" -o /out/help-desk ./cmd/server
 
 # Keep runtime free of apk (CDN often flaky); busybox wget is enough for healthcheck.
-FROM alpine:3.21 AS runtime
+FROM alpine:3.24 AS runtime
 
 RUN adduser -D -H -u 10001 appuser
 
