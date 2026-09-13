@@ -1,4 +1,4 @@
-FROM migrate/migrate:v4.18.1 AS migrator
+FROM migrate/migrate:v4.20.1 AS migrator
 
 FROM golang:1.25-alpine AS builder
 
